@@ -2,6 +2,7 @@ package org.example.com.api;
 
 import io.sinistral.proteus.server.ServerResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -46,7 +47,8 @@ public class OperatorAPI {
   @Operation(summary = "1 - Given a time frame [start-time, end-time], what is the list of running operators", responses = {
       @ApiResponse(description = "Get test's result details", content = @Content(schema = @Schema(implementation = String.class)))}, tags = "Operator API")
   public CompletableFuture<ServerResponse<Set<String>>> listOperators(
-      @PathParam("start") final Long start, @PathParam("end") final Long end
+      @Parameter(description = "Start time in microseconds") @PathParam("start") final Long start,
+      @Parameter(description = "End time in microseconds") @PathParam("end") final Long end
   ) {
     return CompletableFuture.supplyAsync(() -> repository.getOperators(start, end),
         IOPool.EXECUTORS
@@ -61,10 +63,10 @@ public class OperatorAPI {
   @Operation(summary = "2 & 3 - Given a time frame [start-time, end-time] and an Operator, what is the list of vehicle IDs? AND Given a time frame [start-time, end-time] and a fleet, which vehicles are at a stop? Depends on the stopped value. If true will respond the question 2, otherwise 3", responses = {
       @ApiResponse(description = "Get test's result details", content = @Content(schema = @Schema(implementation = String.class)))}, tags = "Operator API")
   public CompletableFuture<ServerResponse<Set<String>>> listVehiclesOfOperator(
-      @PathParam("start") final Long start,
-      @PathParam("end") final Long end,
-      @PathParam("operatorId") final String operatorId,
-      @QueryParam("stopped") final Optional<Boolean> stopped
+      @Parameter(description = "Start time in microseconds") @PathParam("start") final Long start,
+      @Parameter(description = "End time in microseconds") @PathParam("end") final Long end,
+      @Parameter(description = "Operator Id") @PathParam("operatorId") final String operatorId,
+      @Parameter(description = "Optional query parameter, to query for stopped vehicles") @QueryParam("stopped") final Optional<Boolean> stopped
   ) {
 
     return CompletableFuture.supplyAsync(() -> stopped.filter(e -> e)

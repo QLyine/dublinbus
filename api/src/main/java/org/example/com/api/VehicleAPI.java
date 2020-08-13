@@ -2,6 +2,7 @@ package org.example.com.api;
 
 import io.sinistral.proteus.server.ServerResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -46,9 +47,9 @@ public class VehicleAPI {
   @Operation(summary = "4 - Given a time frame [start-time, end-time] and a vehicle, return the trace of that vehicle (GPS entries, ordered by timestamp).", responses = {
       @ApiResponse(description = "Get test's result details", content = @Content(schema = @Schema(implementation = String.class)))}, tags = "Vehicle API")
   public CompletableFuture<ServerResponse<VehicleTrace>> traceVehicle(
-      @PathParam("start") final Long start,
-      @PathParam("end") final Long end,
-      @PathParam("id") final String id
+      @Parameter(description = "Start time in microseconds") @PathParam("start") final Long start,
+      @Parameter(description = "End time in microseconds") @PathParam("end") final Long end,
+      @Parameter(description = "Vehicle Id") @PathParam("id") final String id
   ) {
     return CompletableFuture.supplyAsync(() -> getTraceOf(repository, start, end, id))
         .thenApply(vehicleTrace -> ServerResponse.response(vehicleTrace).applicationJson());
