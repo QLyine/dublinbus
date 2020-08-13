@@ -1,6 +1,10 @@
 package org.example.com.api;
 
 import io.sinistral.proteus.server.ServerResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
@@ -39,6 +43,8 @@ public class VehicleAPI {
   @Path("/{start}/{end}/{id}/gps")
   @Produces((MediaType.APPLICATION_JSON))
   @Consumes((MediaType.MEDIA_TYPE_WILDCARD))
+  @Operation(summary = "4 - Given a time frame [start-time, end-time] and a vehicle, return the trace of that vehicle (GPS entries, ordered by timestamp).", responses = {
+      @ApiResponse(description = "Get test's result details", content = @Content(schema = @Schema(implementation = String.class)))}, tags = "Vehicle API")
   public CompletableFuture<ServerResponse<VehicleTrace>> traceVehicle(
       @PathParam("start") final Long start,
       @PathParam("end") final Long end,

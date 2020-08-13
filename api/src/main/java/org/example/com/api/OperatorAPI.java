@@ -1,6 +1,10 @@
 package org.example.com.api;
 
 import io.sinistral.proteus.server.ServerResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -39,6 +43,8 @@ public class OperatorAPI {
   @Path("/{start}/{end}")
   @Produces((MediaType.APPLICATION_JSON))
   @Consumes((MediaType.MEDIA_TYPE_WILDCARD))
+  @Operation(summary = "1 - Given a time frame [start-time, end-time], what is the list of running operators", responses = {
+      @ApiResponse(description = "Get test's result details", content = @Content(schema = @Schema(implementation = String.class)))}, tags = "Operator API")
   public CompletableFuture<ServerResponse<Set<String>>> listOperators(
       @PathParam("start") final Long start, @PathParam("end") final Long end
   ) {
@@ -52,6 +58,8 @@ public class OperatorAPI {
   @Path("/{start}/{end}/{operatorId}/vehicles")
   @Produces((MediaType.APPLICATION_JSON))
   @Consumes((MediaType.MEDIA_TYPE_WILDCARD))
+  @Operation(summary = "2 & 3 - Given a time frame [start-time, end-time] and an Operator, what is the list of vehicle IDs? AND Given a time frame [start-time, end-time] and a fleet, which vehicles are at a stop? Depends on the stopped value. If true will respond the question 2, otherwise 3", responses = {
+      @ApiResponse(description = "Get test's result details", content = @Content(schema = @Schema(implementation = String.class)))}, tags = "Operator API")
   public CompletableFuture<ServerResponse<Set<String>>> listVehiclesOfOperator(
       @PathParam("start") final Long start,
       @PathParam("end") final Long end,
