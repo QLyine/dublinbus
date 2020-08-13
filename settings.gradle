@@ -1,4 +1,4 @@
-rootProject.name = 'tblxchallenge'
+rootProject.name = 'dublinbus'
 include 'data'
 include 'repository'
 include 'api'
