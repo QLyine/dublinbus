@@ -8,28 +8,48 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
-import org.joda.time.DateTime;
 
 @SuppressWarnings("ALL")
 public class ReadCsv {
 
   public static void main(String[] args) throws IOException {
-    Stream<CsvRow> concat = Stream.concat(readFromFileStream(
-        "/home/qlyine/Downloads/siri.20121106.csv"),
-        readFromFileStream("/home/qlyine/Downloads/siri.20121107.csv")
-    );
+    Stream<CsvRow> csvRowStream = Arrays.asList(
+        "/home/qlyine/Downloads/siri.20121106.csv",
+        "/home/qlyine/Downloads/siri.20121107.csv",
+        "/home/qlyine/Downloads/siri.20121108.csv"
+    ).stream().parallel().flatMap(e -> {
+      try {
+        return readFromFileStream(e);
+      } catch (IOException ioException) {
+        ioException.printStackTrace();
+        return Stream.empty();
+      }
+    });
 
-    Map<String, List<CsvRow>> operatorsVehicleIds = new HashMap<>();
+    Supplier<List<CsvRow>> listSupplier = () -> new ArrayList<>();
+    Map<String, List<CsvRow>> vehicleByHour = new ConcurrentHashMap<>();
+    csvRowStream.forEach(e -> {
+      final long hours = TimeUnit.MICROSECONDS.toHours(e.getTimestamp());
+      final String key = String.format("%d:%s", hours, e.getVehicleId());
+      appendToCollection(vehicleByHour, key, e, listSupplier);
+    });
+
+    Optional<Entry<String, List<CsvRow>>> max = vehicleByHour.entrySet()
+        .stream()
+        .max((o1, o2) -> Integer.compare(o1.getValue().size(), o2.getValue().size()));
+
+    System.out.println(max.get().getValue().size());
+
+    /*Map<String, List<CsvRow>> operatorsVehicleIds = new HashMap<>();
     Supplier<List<CsvRow>> listSupplier = () -> new ArrayList<>();
     Supplier<Set<String>> hashSupplier = () -> new HashSet<>();
     Map<Integer, Set<String>> timeOperators = new HashMap<>();
@@ -118,7 +138,8 @@ public class ReadCsv {
     final String vehicleId = line[12];
     final String stopId = readPossibleNullString(line[13]);
     final boolean stop = Integer.parseInt(line[14]) == 0 ? false : true;
-    return new CsvRow(timeStamp,
+    return new CsvRow(
+        timeStamp,
         lineId,
         direction,
         journeyPatternId,

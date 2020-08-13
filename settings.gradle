@@ -1,2 +1,5 @@
 rootProject.name = 'tblxchallenge'
+include 'data'
+include 'repository'
+include 'api'
 

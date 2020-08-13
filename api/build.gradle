@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    compile project(":repository")
+
+    compile group: 'io.sinistral', name: 'proteus-core', version: '0.4.5'
+    compile group: 'io.sinistral', name: 'proteus-openapi', version: '0.4.5'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
