@@ -17,11 +17,11 @@
 
   docker exec -it aerospike bash
 
-#### Show sets
+#### Show sets (inside the docker)
 
   aql -c "show sets"
 
-#### Query Table
+#### Query Table (inside the docker)
 
   aql -c "select * from test.[set]"
 
@@ -29,8 +29,9 @@
 
 ###  A data loader script
 
-  Run load_dataset.sh script file. It took one minute on my machine to load
-  each csv file.
+  Run load_dataset.sh script file. 
+  It took one minute on my machine to load each csv file.
+  It will exit when finished, and it will tell it will exit.
 
 ### Instructions on how to launch the HTTP service
 
