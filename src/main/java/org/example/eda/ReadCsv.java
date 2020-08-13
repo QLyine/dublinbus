@@ -21,82 +21,6 @@ import java.util.stream.Stream;
 @SuppressWarnings("ALL")
 public class ReadCsv {
 
-  public static void main(String[] args) throws IOException {
-    Stream<CsvRow> csvRowStream = Arrays.asList(
-        "/home/qlyine/Downloads/siri.20121106.csv",
-        "/home/qlyine/Downloads/siri.20121107.csv",
-        "/home/qlyine/Downloads/siri.20121108.csv"
-    ).stream().parallel().flatMap(e -> {
-      try {
-        return readFromFileStream(e);
-      } catch (IOException ioException) {
-        ioException.printStackTrace();
-        return Stream.empty();
-      }
-    });
-
-    Supplier<List<CsvRow>> listSupplier = () -> new ArrayList<>();
-    Map<String, List<CsvRow>> vehicleByHour = new ConcurrentHashMap<>();
-    csvRowStream.forEach(e -> {
-      final long hours = TimeUnit.MICROSECONDS.toHours(e.getTimestamp());
-      final String key = String.format("%d:%s", hours, e.getVehicleId());
-      appendToCollection(vehicleByHour, key, e, listSupplier);
-    });
-
-    Optional<Entry<String, List<CsvRow>>> max = vehicleByHour.entrySet()
-        .stream()
-        .max((o1, o2) -> Integer.compare(o1.getValue().size(), o2.getValue().size()));
-
-    System.out.println(max.get().getValue().size());
-
-    /*Map<String, List<CsvRow>> operatorsVehicleIds = new HashMap<>();
-    Supplier<List<CsvRow>> listSupplier = () -> new ArrayList<>();
-    Supplier<Set<String>> hashSupplier = () -> new HashSet<>();
-    Map<Integer, Set<String>> timeOperators = new HashMap<>();
-    final AtomicLong min = new AtomicLong(Long.MAX_VALUE);
-    final AtomicLong max = new AtomicLong(Long.MAX_VALUE);
-    concat.forEach(csvRow -> {
-      String key = String.format("%s:%s:%s",
-          csvRow.getTimeFrame(),
-          csvRow.getOperator(),
-          csvRow.getVehicleId()
-      );
-      appendToCollection(operatorsVehicleIds, key, csvRow, listSupplier);
-      final int hours = (int) TimeUnit.MICROSECONDS.toHours(csvRow.getTimestamp());
-      appendToCollection(operatorsVehicleIds, key, csvRow, listSupplier);
-      min.set(Math.min(csvRow.getTimestamp(), min.get()));
-      max.set(Math.max(csvRow.getTimestamp(), max.get()));
-      final String value = String.format("%s:%s", csvRow.getTimeFrame(), csvRow.getOperator());
-      appendToCollection(timeOperators, hours, value, hashSupplier);
-    });
-
-    for (final Entry<Integer, Set<String>> integerSetEntry : timeOperators.entrySet()) {
-      final Integer key = integerSetEntry.getKey();
-      final long instant = TimeUnit.HOURS.toMillis(key);
-      final DateTime dateTime = new DateTime(instant);
-      System.out.println(String.format("%s - %s - %s",
-          dateTime,
-          integerSetEntry.getValue().size(),
-          integerSetEntry.getValue()
-      ));
-    }
-
-    /*
-    operatorsVehicleIds.entrySet()
-        .stream()
-        .sorted((e1, e2) -> -1 * Integer.compare(e1.getValue().size(), e2.getValue().size()))
-        .limit(1)
-        .forEach(e -> {
-          String key = e.getKey();
-          System.out.println(key + " " + e.getValue().size());
-          e.getValue()
-              .stream()
-              .sorted((o1, o2) -> Long.compare(o1.getTimestamp(), o2.getTimestamp()))
-              .forEach(v -> System.out.println(v));
-        });
-     */
-  }
-
   private static <K, V, C extends Collection<V>> void appendToCollection(
       Map<K, C> map, K k, V v, Supplier<C> supplier
   ) {
@@ -111,11 +35,11 @@ public class ReadCsv {
     });
   }
 
-  private static Stream<CsvRow> readFromFileStream(final String fileLocation) throws IOException {
+  public static Stream<CsvRow> readFromFileStream(final String fileLocation) throws IOException {
     return Files.lines(Paths.get(fileLocation)).map(e -> e.split(",")).map(e -> map(e));
   }
 
-  private static List<CsvRow> readFromFile(final String fileLocation) throws IOException {
+  public static List<CsvRow> readFromFile(final String fileLocation) throws IOException {
     return Files.lines(Paths.get(fileLocation))
         .map(e -> e.split(","))
         .map(e -> map(e))

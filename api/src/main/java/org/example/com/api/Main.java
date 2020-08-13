@@ -10,6 +10,7 @@ public class Main extends ProteusApplication {
 
     simpleHttpServer.addModule(RepositoryModule.class);
     simpleHttpServer.addController(OperatorAPI.class);
+    simpleHttpServer.addController(VehicleAPI.class);
 
     simpleHttpServer.start();
   }

@@ -1,4 +1,4 @@
-package org.example.com.data.utils;
+package org.example.com.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 public class VehicleData implements Comparable<VehicleData> {
 
   private long ts;
+  private float lon;
+  private float lat;
   private String vehicleId;
   private String operatorId;
   private String stopId;

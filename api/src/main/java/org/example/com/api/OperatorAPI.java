@@ -1,6 +1,7 @@
 package org.example.com.api;
 
 import io.sinistral.proteus.server.ServerResponse;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -11,7 +12,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.example.com.repository.IVehiclesRepository;
 
@@ -52,18 +53,31 @@ public class OperatorAPI {
   @Produces((MediaType.APPLICATION_JSON))
   @Consumes((MediaType.MEDIA_TYPE_WILDCARD))
   public CompletableFuture<ServerResponse<Set<String>>> listVehiclesOfOperator(
-      @PathParam("start") final long start,
-      @PathParam("end") final long end,
-      @PathParam("operatorId") final String operatorId
+      @PathParam("start") final Long start,
+      @PathParam("end") final Long end,
+      @PathParam("operatorId") final String operatorId,
+      @QueryParam("stopped") final Optional<Boolean> stopped
   ) {
-    return CompletableFuture.supplyAsync(() -> repository.getVehiclesOfOperator(start,
-        end,
-        operatorId
-    ))
-        .thenApply(set -> set.parallelStream()
-            .map(e -> e.getVehicleId())
-            .collect(Collectors.toSet()))
+
+    return CompletableFuture.supplyAsync(() -> stopped.filter(e -> e)
+        .map(e -> getVehiclesStopped(repository, start, end, operatorId))
+        .orElseGet(() -> getVehicles(repository, start, end, operatorId)))
         .thenApply(setOfIds -> ServerResponse.response(setOfIds).applicationJson());
+  }
+
+  public static Set<String> getVehicles(
+      IVehiclesRepository repository, long from, long to, final String operatorId
+  ) {
+    return repository.getVehiclesOfOperator(from, to, operatorId)
+        .parallelStream()
+        .map(e -> e.getVehicleId())
+        .collect(Collectors.toSet());
+  }
+
+  public static Set<String> getVehiclesStopped(
+      IVehiclesRepository repository, long from, long to, final String operatorId
+  ) {
+    return repository.getVehiclesStoppedOfOperator(from, to, operatorId);
   }
 
 }

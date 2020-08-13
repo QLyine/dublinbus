@@ -3,7 +3,7 @@ package org.example.com.repository.tests;
 import com.aerospike.client.AerospikeClient;
 import java.util.NavigableSet;
 import java.util.Set;
-import org.example.com.data.utils.VehicleData;
+import org.example.com.data.VehicleData;
 import org.example.com.repository.IVehiclesRepository;
 import org.example.com.repository.VehiclesRepositoryImpl;
 import org.joda.time.DateTime;
@@ -53,20 +53,33 @@ public class VehiclesRepositoryTest {
     for (int i = 0; i < 100; i++) {
       writeAndCreateSampleData("o" + i, "v1", dateTime.plus(i));
     }
-    final Set<String> operators = repository.getOperators(TestUtils.dateTimeToMicros(dateTime),
-        TestUtils.dateTimeToMicros(dateTime.plusMinutes(5))
+    testOperatorsGet(dateTime, dateTime, 1);
+    testOperatorsGet(dateTime.plus(1), dateTime.plus(1), 1);
+    testOperatorsGet(dateTime, dateTime.plus(59), 60);
+    testOperatorsGet(dateTime.minus(10), dateTime.plus(9), 10);
+    testOperatorsGet(dateTime.minus(10), dateTime.plus(100), 100);
+    testOperatorsGet(dateTime.plus(50), dateTime.plus(150), 50);
+  }
+
+  @Test()
+  public void readWrite10OperatorsInOneDay() {
+    for (int i = 0; i < 10; i++) {
+      writeAndCreateSampleData("o" + i, "v1", dateTime.plusHours(i));
+    }
+    testOperatorsGet(dateTime.plus(1), dateTime.plus(1), 0);
+    testOperatorsGet(dateTime, dateTime, 1);
+    testOperatorsGet(dateTime, dateTime.plusHours(1), 2);
+    testOperatorsGet(dateTime, dateTime.plusHours(2), 3);
+    testOperatorsGet(dateTime, dateTime.plusHours(4).minus(1), 4);
+    testOperatorsGet(dateTime, dateTime.plusHours(4), 5);
+    testOperatorsGet(dateTime.plusHours(1), dateTime.plusHours(4).minus(1), 3);
+  }
+
+  public void testOperatorsGet(final DateTime from, final DateTime to, final int expectedSize) {
+    final Set<String> set = repository.getOperators(TestUtils.dateTimeToMicros(from),
+        TestUtils.dateTimeToMicros(to)
     );
-
-    Assert.assertFalse(operators.isEmpty());
-    Assert.assertEquals(operators.size(), 100);
-
-    final Set<String> fiftyOperators = repository.getOperators(TestUtils.dateTimeToMicros(dateTime.minus(
-        25)),
-        TestUtils.dateTimeToMicros(dateTime.plus(50 - 1))
-    );
-
-    Assert.assertFalse(fiftyOperators.isEmpty());
-    Assert.assertEquals(fiftyOperators.size(), 50);
+    Assert.assertEquals(set.size(), expectedSize);
   }
 
   @Test()
@@ -109,9 +122,18 @@ public class VehiclesRepositoryTest {
     Assert.assertTrue(twoVehicleIds.stream().allMatch(e -> e.getVehicleId().equals("v3")));
   }
 
+  private void testNVehicleOfOperator(
+      final DateTime from, final DateTime to, final String operator, final int n
+  ) {
+    final NavigableSet<VehicleData> vehiclesOfOperator = repository.getVehiclesOfOperator(TestUtils.dateTimeToMicros(
+        from), TestUtils.dateTimeToMicros(to), operator);
+
+    Assert.assertEquals(vehiclesOfOperator.size(), n);
+  }
+
 
   @Test()
-  public void readWrite60perators() {
+  public void readWrite60OperatorsPerHour() {
     for (int i = 0; i < 60; i++) {
       writeAndCreateSampleData("o" + i, "v1", dateTime.plusHours(i));
     }
@@ -122,12 +144,79 @@ public class VehiclesRepositoryTest {
 
     Assert.assertFalse(threeOperator.isEmpty());
     Assert.assertEquals(threeOperator.size(), 60);
+
+  }
+
+
+  @Test()
+  public void readWriteVehicleStopped() {
+    for (int i = 0; i < 10; i++) {
+      writeAndCreateSampleData("o", "v1", dateTime.plus(i), true);
+    }
+    for (int i = 5; i < 10; i++) {
+      writeAndCreateSampleData("o", "v2", dateTime.plus(i), true);
+    }
+    for (int i = 10; i < 20; i++) {
+      writeAndCreateSampleData("o", "v1", dateTime.plus(i), false);
+    }
+
+    queryStoppedAndAssert(dateTime, dateTime, "o", 1);
+    queryStoppedAndAssert(dateTime.plus(5), dateTime.plus(7), "o", 2);
+    queryStoppedAndAssert(dateTime, dateTime.plus(9), "o", 2);
+
+    queryStoppedAndAssert(dateTime, dateTime.plus(11), "o", 1);
+
+  }
+
+  @Test()
+  public void readWriteVehicleStoppedInvalidatingCache() {
+    for (int i = 0; i < 10; i++) {
+      writeAndCreateSampleData("o", "v1", dateTime.plus(i), true);
+    }
+    for (int i = 5; i < 10; i++) {
+      writeAndCreateSampleData("o", "v2", dateTime.plus(i), true);
+    }
+    for (int i = 10; i < 20; i++) {
+      writeAndCreateSampleData("o", "v1", dateTime.plus(i), false);
+    }
+    repository.invalidateAllCache();
+
+    queryStoppedAndAssert(dateTime, dateTime, "o", 1);
+    queryStoppedAndAssert(dateTime.plus(5), dateTime.plus(7), "o", 2);
+    queryStoppedAndAssert(dateTime, dateTime.plus(9), "o", 2);
+
+    queryStoppedAndAssert(dateTime, dateTime.plus(11), "o", 1);
+
+  }
+
+  public void queryStoppedAndAssert(
+      final DateTime from, final DateTime to, final String operator, final int assertSize
+  ) {
+    final Set<String> ids = repository.getVehiclesStoppedOfOperator(TestUtils.dateTimeToMicros(from),
+        TestUtils.dateTimeToMicros(to),
+        operator
+    );
+
+    Assert.assertEquals(ids.size(), assertSize);
   }
 
   public void writeAndCreateSampleData(
       final String operatorId, final String vehicleId, final DateTime dateTime
   ) {
     repository.writeData(VehiclesRepositoryTest.createSampleData(operatorId, vehicleId, dateTime));
+  }
+
+  public void writeAndCreateSampleData(
+      final String operatorId,
+      final String vehicleId,
+      final DateTime dateTime,
+      final boolean stopped
+  ) {
+    repository.writeData(VehiclesRepositoryTest.createSampleDataWithStop(operatorId,
+        vehicleId,
+        dateTime,
+        stopped
+    ));
   }
 
   public void writeData(final VehicleData vehicleData) {
@@ -137,6 +226,29 @@ public class VehiclesRepositoryTest {
   public static VehicleData createSampleData(
       final String operatorId, final String vehicleId, final DateTime dateTime
   ) {
-    return new VehicleData(TestUtils.dateTimeToMicros(dateTime), vehicleId, operatorId, "", false);
+    return new VehicleData(TestUtils.dateTimeToMicros(dateTime),
+        0f,
+        0f,
+        vehicleId,
+        operatorId,
+        "",
+        false
+    );
+  }
+
+  public static VehicleData createSampleDataWithStop(
+      final String operatorId,
+      final String vehicleId,
+      final DateTime dateTime,
+      final boolean stopped
+  ) {
+    return new VehicleData(TestUtils.dateTimeToMicros(dateTime),
+        0f,
+        0f,
+        vehicleId,
+        operatorId,
+        "suid",
+        stopped
+    );
   }
 }
