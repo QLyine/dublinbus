@@ -40,7 +40,7 @@
 
   To access swagger :
 
-  http://localhost:8080/v1/openap
+  http://localhost:8080/v1/openapi
 
 #### Examples
 
